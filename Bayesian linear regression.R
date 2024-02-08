@@ -12,6 +12,20 @@ sample = sample(c(TRUE, FALSE), nrow(cars), replace=T, prob=c(0.7, 0.3))
 train = cars[sample, ]
 test = cars[!sample, ]
 
+# 0.2 Check Normality of the response
+
+ggplot(cars, aes(x = dist)) +
+  geom_histogram(aes(y = ..density..), binwidth = 5,  colour = 1, fill = "white") +
+  geom_density() +
+  labs(title = 'Histogram with overlying density of the response',
+       subtitle = 'Cars data set',
+       y="density", x="speed (mph)") +
+  theme(axis.text=element_text(size=8),
+        axis.title=element_text(size=8),
+        plot.subtitle=element_text(size=10, face="italic", color="darkred"),
+        panel.background = element_rect(fill = "white", colour = "grey50"),
+        panel.grid.major = element_line(colour = "grey90"))
+
 # 1.1 Create frequentist linear model, log linear model and plot
 freq.lin.mod = lm(dist~speed, data=train)
 freq.log.lin.mod = lm(log(dist)~speed, data = train)
@@ -53,7 +67,7 @@ plot2 = train %>%
 
 plot2
 
-# 1.2 Summary of estimates, goodness of fit (R-squared) and cross-validation
+# 1.2 Summary of estimates
 
 # table of results
 library(xtable)
@@ -64,6 +78,7 @@ setwd("C:/Users/julia/OneDrive/Desktop/github/64. Bayesian Linear Regression")
 # print results to LaTeX
 stargazer(freq.lin.mod, title="Linear model", align=TRUE, single.row = TRUE, olumn.sep.width = "1pt")
 stargazer(freq.log.lin.mod, title="Log-Linear model", align=TRUE, single.row = TRUE, olumn.sep.width = "1pt")
+
 
 # 1.3 Add predictions, residuals and plot the residuals
 train2 = data.frame(train, estimate = predict(freq.lin.mod), 
@@ -106,14 +121,29 @@ plot4 = train3 %>%
 
 plot4
 
-# 2.1
+# 2.1 Bayesian modeling
+
+cars$dist %>% summary() # centered around 45 with sd = 30
+
+qnorm(c(.25, .75), mean = 45, sd = 30)
+# [1] 24.76531 65.23469 # similar to our data, prior on Beta0, informative prior
+# prior on sigma N(0, 1000)
+
 
 # 2.2 Define the likelihood, posterior and proposal function
 library(brms)
 set.seed(2024)
 
 # Linear  model
-bay.lin.mod = brm(dist ~ speed, data = train, family="gaussian")
+bay.lin.mod = brm(dist ~ speed, data = train, family="gaussian") # reference non-informative priors
+
+# Linear model 2
+bay.lin.mod.2 = brm(dist ~ speed,
+                   data = train, family = gaussian(),
+                   prior = c(
+                     prior(normal(45, 30), class = Intercept),
+                     prior(normal(0, 1000), class = sigma),
+                     prior(normal(0, 100), class = b)))
 # Linear  model
 bay.log.lin.mod = brm(log(dist) ~ speed, data = train, family="gaussian")
 
@@ -175,7 +205,10 @@ ggplot(BayModel, aes(x = Speed, y = Distance)) +
         panel.grid.major = element_line(colour = "grey90"))
 
 
+#----
 
+
+#-----
 
 
 
