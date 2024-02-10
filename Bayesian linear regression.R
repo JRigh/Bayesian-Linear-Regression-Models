@@ -132,18 +132,20 @@ qnorm(c(.25, .75), mean = 45, sd = 30)
 
 # 2.2 Define the likelihood, posterior and proposal function
 library(brms)
+library(stan)
+library(tidybayes)
+library(ProbBayes)
 set.seed(2024)
 
 # Linear  model
 bay.lin.mod = brm(dist ~ speed, data = train, family="gaussian") # reference non-informative priors
 
 # Linear model 2
-bay.lin.mod.2 = brm(dist ~ speed,
-                   data = train, family = gaussian(),
-                   prior = c(
-                     prior(normal(45, 30), class = Intercept),
-                     prior(normal(0, 1000), class = sigma),
-                     prior(normal(0, 100), class = b)))
+bay.lin.mod.2 = brm(dist ~ 1 + speed,
+                   data = train, family = "gaussian",
+                   prior = c(prior(~normal(45, 30), class = Intercept),
+                             prior(~normal(0, 1000), class = sigma),
+                             prior(~normal(0, 100), class = b)))
 # Linear  model
 bay.log.lin.mod = brm(log(dist) ~ speed, data = train, family="gaussian")
 
@@ -209,10 +211,10 @@ ggplot(BayModel, aes(x = Speed, y = Distance)) +
 
 
 #-----
+install.packages("INLA")
+library("INLA")
 
-
-
-
+#
 
 # 3,1 Bayesian linear regression with INLA
 install.packages("INLA",repos=c(getOption("repos"),INLA="https://inla.r-inla-download.org/R/stable"), dep=TRUE) 
